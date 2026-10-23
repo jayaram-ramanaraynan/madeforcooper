@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bowlwise: dog feeding calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light dark;
+  --bg:#EFF5F2; --surface:#FFFFFF; --ink:#12262B; --muted:#55696F; --line:#CFDDD7;
+  --primary:#145A50; --primary-ink:#FFFFFF;
+  --dry:#1F7A6B; --fresh:#F2B134; --home:#E2634A; --treat:#8FA0A6;
+  --warn:#B8412B; --warnbg:#FCEBE6; --tipbg:#FFF4D9; --okbg:#E1F3EC; --soft:#E3EEE9;
+  --display:'Bricolage Grotesque','Avenir Next','Trebuchet MS',system-ui,sans-serif;
+  --body:'Figtree','Avenir Next','Segoe UI',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0E1A1D; --surface:#162529; --ink:#E8F1EE; --muted:#9DB2B7; --line:#2B4147;
+    --primary:#4FC3AE; --primary-ink:#0A181B;
+    --dry:#3FB39F; --fresh:#F2B134; --home:#EF7C65; --treat:#7A8C92;
+    --warn:#F2907B; --warnbg:#3A201B; --tipbg:#372F19; --okbg:#173128; --soft:#1C3036;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55}
+.wrap{max-width:720px;margin:0 auto;padding:18px 16px 110px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 2px 14px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:-.02em}
+.brand svg{width:34px;height:34px}
+.tagline{color:var(--muted);font-size:14px;text-align:right}
+.steps{display:flex;gap:6px;margin:0 0 14px;padding:0;list-style:none}
+.steps button{width:100%;min-height:44px;border:0;border-bottom:4px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:14px;font-weight:600;padding:6px 2px;cursor:pointer;text-align:left}
+.steps button[aria-current=step]{border-color:var(--primary);color:var(--ink)}
+.steps button.done{border-color:var(--dry);color:var(--ink)}
+.steps button:disabled{cursor:default;opacity:.7}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:26px 26px 18px 18px;padding:22px 18px 20px}
+h1,h2,h3{font-family:var(--display);letter-spacing:-.02em;line-height:1.15;margin:0}
+h1{font-size:clamp(28px,6.5vw,38px);font-weight:800}
+h2{font-size:clamp(24px,5.5vw,30px);font-weight:800}
+h3{font-size:20px;font-weight:700;margin-bottom:6px}
+.lede{color:var(--muted);margin:8px 0 22px;max-width:60ch}
+.field{margin:0 0 20px}
+label,.lab{display:block;font-weight:600;margin-bottom:6px}
+.opt{font-weight:400;color:var(--muted)}
+.hint{color:var(--muted);font-size:14.5px;margin:6px 0 0}
+.in{width:100%;min-height:50px;padding:10px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font:inherit}
+select.in{appearance:auto}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row-in{display:flex;gap:10px;align-items:stretch}
+.row-in .in{flex:1}
+.row-in select.in{flex:0 0 110px}
+:focus-visible{outline:3px solid var(--primary);outline-offset:2px}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.segbtn,.chip,.minibtn{min-height:48px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;cursor:pointer;transition:background .15s,border-color .15s}
+.segbtn{flex:1 1 auto;border-radius:999px;padding:8px 16px}
+.segbtn small{display:block;font-size:13px;opacity:.8}
+.stack{flex-direction:column}
+.stack .segbtn{border-radius:16px;text-align:left;width:100%}
+.chip{border-radius:999px;padding:8px 15px;min-height:44px}
+.minibtn{border-radius:10px;padding:4px 12px;min-height:40px;font-size:15px}
+[aria-pressed=true]{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.src{display:grid;gap:10px;margin-bottom:18px}
+.srcbtn{display:flex;gap:14px;align-items:center;text-align:left;width:100%;min-height:68px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;border-radius:18px 18px 18px 6px;padding:12px 16px;cursor:pointer}
+.srcbtn .sw{flex:0 0 14px;height:42px;border-radius:7px}
+.srcbtn b{display:block;font-size:17px}
+.srcbtn span.d{display:block;font-size:14px;opacity:.85}
+.block{border-top:1px dashed var(--line);padding-top:18px;margin-top:18px}
+.block h3 .dot{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:8px}
+.homerow{display:grid;grid-template-columns:1fr 104px auto;gap:8px;align-items:center;margin:8px 0}
+.homerow .nm{font-size:15.5px}
+.homerow .kc{display:block;color:var(--muted);font-size:13px}
+.xbtn{min-width:44px;min-height:44px;border:1.5px solid var(--line);background:transparent;color:var(--muted);border-radius:12px;font:inherit;font-size:20px;cursor:pointer}
+.warnline{background:var(--warnbg);border-left:5px solid var(--warn);border-radius:6px 14px 14px 6px;padding:10px 14px;font-size:15px;margin:12px 0}
+.actions{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap}
+.btn{min-height:52px;padding:10px 24px;border-radius:14px;border:1.5px solid var(--primary);background:var(--primary);color:var(--primary-ink);font:inherit;font-weight:700;font-size:17px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.err{color:var(--warn);font-weight:600;min-height:1.4em;margin-top:12px}
+.tally{position:sticky;bottom:12px;margin-top:18px;background:var(--ink);color:var(--bg);border-radius:18px;padding:12px 16px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.tally b{font-family:var(--display);font-size:18px}
+.tbar{position:relative;height:12px;border-radius:7px;background:rgba(255,255,255,.2);margin-top:8px;overflow:hidden;display:flex}
+.tbar i{display:block;height:100%}
+.tmark{position:absolute;top:-2px;bottom:-2px;width:3px;background:#fff;border-radius:2px}
+/* results */
+.hero{background:var(--primary);color:var(--primary-ink);border-radius:26px 26px 18px 18px;padding:22px 18px 18px;display:grid;gap:8px}
+.hero h2{color:inherit}
+.hero p{margin:0}
+.big{font-family:var(--display);font-weight:800;font-size:clamp(46px,13vw,72px);line-height:1;letter-spacing:-.03em}
+.big small{font-size:.3em;font-weight:600;letter-spacing:0;margin-left:6px}
+.bowlcard{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;margin-top:14px;display:grid;gap:12px;grid-template-columns:minmax(0,1fr);justify-items:center}
+.bowlcard svg{width:100%;max-width:340px;height:auto}
+.fillg{animation:rise 1s ease-out both}
+@keyframes rise{from{transform:translateY(100px)}to{transform:none}}
+@media (prefers-reduced-motion: reduce){.fillg{animation:none}}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14.5px;justify-content:center}
+.legend span i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:6px;vertical-align:-1px}
+.sec{margin-top:26px}
+.sec>h3{font-size:22px;margin-bottom:10px}
+.tblwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:16px}
+table{border-collapse:collapse;width:100%;min-width:480px;font-size:15.5px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-size:14px;color:var(--muted);font-weight:600}
+td b{font-weight:700}
+td small,.sub{color:var(--muted);display:block;font-size:13.5px}
+details{margin-top:6px}
+details summary{cursor:pointer;color:var(--primary);font-weight:600;font-size:14.5px}
+details ul{margin:6px 0 0;padding-left:18px;font-size:14.5px}
+.note{border-left:5px solid;border-radius:6px 16px 16px 6px;padding:12px 15px;margin:10px 0}
+.note b{display:block;margin-bottom:2px}
+.note p{margin:0;font-size:16px}
+.note.warn{background:var(--warnbg);border-color:var(--warn)}
+.note.tip{background:var(--tipbg);border-color:var(--fresh)}
+.note.ok{background:var(--okbg);border-color:var(--dry)}
+.note.info{background:var(--soft);border-color:var(--treat)}
+.fine{color:var(--muted);font-size:14px;margin-top:28px}
+.sr{position:absolute;left:-9999px}
+@media (max-width:480px){.homerow{grid-template-columns:1fr 92px auto}.tagline{display:none}}
+@media print{
+  body{background:#fff;color:#000}.steps,.actions,.tally,header .tagline{display:none!important}
+  .hero{background:#fff;color:#000;border:2px solid #000}.fillg{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M4 16h32c0 10-6 17-16 17S4 26 4 16z" fill="var(--primary)"/><path d="M9 12c1-4 4-6 6-6s3 2 3 4M31 12c-1-4-4-6-6-6s-3 2-3 4" fill="none" stroke="var(--fresh)" stroke-width="3" stroke-linecap="round"/><rect x="12" y="35" width="16" height="3" rx="1.5" fill="var(--primary)"/></svg>
+      Bowlwise
+    </div>
+    <div class="tagline">Dog feeding calculator</div>
+  </header>
+  <ol class="steps" id="steps" aria-label="Progress"></ol>
+  <main id="app"></main>
+</div>
+
+<script>
+/* ---------- DATA ---------- */
+const BREEDS = [
+  // g: ind = Indian, mix = mixed. s = size class. min/max = typical healthy adult kg
+  {n:'Indie / Indian Pariah',s:'medium',min:15,max:25,g:'ind',t:['indie']},
+  {n:'Indian Spitz',s:'small',min:5,max:9,g:'ind',t:[]},
+  {n:'Mudhol Hound',s:'medium',min:17,max:25,g:'ind',t:['lean']},
+  {n:'Rajapalayam',s:'large',min:22,max:30,g:'ind',t:['lean']},
+  {n:'Akita',s:'large',min:32,max:59,t:['joint','bloat','efficient']},
+  {n:'Basset Hound',s:'medium',min:20,max:29,t:['obese','spine','joint']},
+  {n:'Beagle',s:'medium',min:9,max:14,t:['obese']},
+  {n:'Bernese Mountain Dog',s:'large',min:36,max:50,t:['joint','bloat']},
+  {n:'Border Collie',s:'medium',min:14,max:20,t:[]},
+  {n:'Boston Terrier',s:'small',min:5,max:11,t:['brachy']},
+  {n:'Boxer',s:'large',min:24,max:32,t:['bloat','heart']},
+  {n:'Bulldog (English)',s:'medium',min:18,max:25,t:['obese','brachy','skin','joint']},
+  {n:'Cane Corso',s:'large',min:40,max:50,t:['joint','bloat']},
+  {n:'Cavalier King Charles Spaniel',s:'small',min:5.5,max:8,t:['obese','heart']},
+  {n:'Chihuahua',s:'toy',min:1.5,max:3,t:['toyHypo']},
+  {n:'Cocker Spaniel',s:'medium',min:12,max:16,t:['obese','skin']},
+  {n:'Dachshund (miniature)',s:'small',min:4,max:6,t:['spine','obese']},
+  {n:'Dachshund (standard)',s:'medium',min:7,max:14,t:['spine','obese']},
+  {n:'Dalmatian',s:'large',min:23,max:32,t:['purine']},
+  {n:'Doberman Pinscher',s:'large',min:27,max:45,t:['bloat','heart']},
+  {n:'French Bulldog',s:'medium',min:8,max:14,t:['brachy','skin','obese']},
+  {n:'German Shepherd',s:'large',min:22,max:40,t:['bloat','sensitive','joint']},
+  {n:'Golden Retriever',s:'large',min:25,max:34,t:['obese','joint','skin']},
+  {n:'Great Dane',s:'giant',min:45,max:80,t:['bloat','joint','heart']},
+  {n:'Great Pyrenees',s:'giant',min:40,max:55,t:['bloat','joint']},
+  {n:'Havanese',s:'small',min:4.5,max:7,t:[]},
+  {n:'Jack Russell Terrier',s:'small',min:5,max:8,t:[]},
+  {n:'Labrador Retriever',s:'large',min:25,max:36,t:['obese','joint','skin']},
+  {n:'Lhasa Apso',s:'small',min:5,max:8,t:['skin']},
+  {n:'Maltese',s:'toy',min:2,max:4,t:['toyHypo','sensitive']},
+  {n:'Mastiff',s:'giant',min:55,max:90,t:['bloat','joint']},
+  {n:'Pekingese',s:'small',min:3,max:6,t:['brachy','obese']},
+  {n:'Pit Bull / American Staffordshire',s:'medium',min:16,max:32,t:['skin','joint']},
+  {n:'Pomeranian',s:'toy',min:1.8,max:3.5,t:['toyHypo']},
+  {n:'Poodle (toy)',s:'toy',min:2,max:4,t:['toyHypo']},
+  {n:'Poodle (miniature)',s:'small',min:4,max:7,t:[]},
+  {n:'Poodle (standard)',s:'large',min:20,max:32,t:['bloat']},
+  {n:'Pug',s:'small',min:6,max:9,t:['obese','brachy','skin']},
+  {n:'Rottweiler',s:'large',min:36,max:55,t:['obese','joint','heart']},
+  {n:'Saint Bernard',s:'giant',min:55,max:80,t:['bloat','joint','heart']},
+  {n:'Samoyed',s:'medium',min:20,max:30,t:['efficient']},
+  {n:'Shiba Inu',s:'small',min:8,max:11,t:['skin']},
+  {n:'Shih Tzu',s:'small',min:4,max:7.5,t:['skin','obese']},
+  {n:'Siberian Husky',s:'medium',min:16,max:27,t:['efficient']},
+  {n:'Yorkshire Terrier',s:'toy',min:2,max:3.2,t:['toyHypo','sensitive']},
+  {n:'Mixed breed: small (under 10 kg)',s:'small',min:5,max:10,g:'mix',t:[]},
+  {n:'Mixed breed: medium (10 to 25 kg)',s:'medium',min:10,max:25,g:'mix',t:[]},
+  {n:'Mixed breed: large (25 to 45 kg)',s:'large',min:25,max:45,g:'mix',t:['joint']},
+  {n:'Mixed breed: giant (over 45 kg)',s:'giant',min:45,max:65,g:'mix',t:['bloat','joint']},
+];
+(function sortBreeds(){
+  const rank=b=>b.g==='ind'?0:b.g==='mix'?2:1;
+  BREEDS.sort((a,b)=>rank(a)-rank(b)||(rank(a)===1?a.n.localeCompare(b.n):0));
+})();
+
+const BREED_NOTES = {
+  obese:['Weight gain is easy for this breed','Measure every meal on a kitchen scale instead of eyeballing, and avoid leaving food out all day.'],
+  joint:['Joints do better when lean','Hips and elbows are a weak spot in this breed, so staying slim is the best joint care. Ask your vet about omega-3 (fish oil).'],
+  bloat:['Watch for bloat','Deep-chested dogs can get a twisted stomach (GDV). Feed 2 or 3 smaller meals, use a slow feeder if they gulp, and keep hard exercise away from mealtimes.'],
+  brachy:['Flat face, so keep them lean and cool','Extra weight makes breathing and heat tolerance worse. Shallow bowls help, and so do cooler walks in hot weather.'],
+  spine:['Long back, so excess weight hurts','Extra kilos put real strain on the spine. Keep a visible waist and go easy on treats.'],
+  toyHypo:['Tiny dogs shouldn\u2019t skip meals','Very small dogs, especially puppies, can drop their blood sugar if they go too long without eating. If they seem weak or shaky, see a vet right away.'],
+  purine:['Dalmatians form urate stones','Limit organ meats, sardines and other high-purine foods, and keep fresh water available all day.'],
+  sensitive:['Often has a sensitive stomach','Introduce any new food slowly over 7 to 10 days and avoid frequent switching.'],
+  skin:['Skin and ear trouble is common','Itchy skin or ear infections can be food-related. If it keeps happening, ask your vet about a proper elimination diet.'],
+  heart:['Heart checks are worthwhile','This breed is more prone to heart disease. Keep sodium low, so skip salty human snacks, and stay on top of vet checks.'],
+  efficient:['Efficient eater','Some dogs of this type need less than you expect. Go by body shape (you should feel ribs easily) more than by the bag chart.'],
+  lean:['Naturally lean build','A visible rib outline can be normal for sighthound types. Don\u2019t overfeed to \u201cfill them out\u201d unless your vet says they\u2019re underweight.'],
+  indie:['Hardy and adaptable','Indies usually do well on a wide range of foods. Measured portions and regular exercise are what keep them in shape.']
+};
+
+const HEALTH = [
+  {id:'allergy',l:'Food allergies or itchy skin'},
+  {id:'stomach',l:'Sensitive stomach or loose stools'},
+  {id:'joint',l:'Joint pain or arthritis'},
+  {id:'diabetes',l:'Diabetes',serious:1},
+  {id:'kidney',l:'Kidney disease',serious:1},
+  {id:'heart',l:'Heart disease',serious:1},
+  {id:'pancreatitis',l:'Pancreatitis (past or present)',serious:1},
+  {id:'urinary',l:'Urinary stones or crystals',serious:1},
+  {id:'dental',l:'Dental problems',},
+  {id:'pregnant',l:'Pregnant or nursing',serious:1},
+];
+const HEALTH_NOTES = {
+  allergy:['Food allergies or itchy skin','Common triggers are chicken, beef, dairy, wheat and egg. Guessing and switching foods rarely works. Your vet can set up an 8 to 12 week elimination diet with one protein and one carb. Remember that treats and scraps count too.'],
+  stomach:['Sensitive stomach','Feed smaller meals more often, and change foods over 7 to 10 days. Boiled chicken and rice is fine for 1 to 2 days only, not as a long-term diet. See a vet if loose stools last more than 48 hours or there is blood or lethargy.'],
+  joint:['Joint pain','Keeping your dog lean is the most effective treatment, so follow the calorie target closely. Omega-3 (fish oil) and vet-approved joint supplements may help. Keep exercise gentle and regular.'],
+  diabetes:['Diabetes','Feed two equal meals about 12 hours apart, at the same times each day, matched to insulin timing. Keep the food the same every day. Avoid sugary extras like jaggery, honey and biscuits. Don\u2019t change the diet without talking to your vet.'],
+  kidney:['Kidney disease','Dogs with kidney disease usually need a vet-prescribed renal diet with lower phosphorus. Avoid cheese, salty snacks and organ meats, and keep fresh water always available. Homemade food needs a vet nutritionist\u2019s recipe.'],
+  heart:['Heart disease','Keep sodium low, so no chips, namkeen, pickles, cheese or processed meat. Watch for appetite loss and weight loss, and tell your vet if you see either.'],
+  pancreatitis:['Pancreatitis','Choose a low-fat food. Skip ghee and oil, fatty meat, fried leftovers and rich treats, and feed small regular meals. A single fatty meal can trigger a flare-up.'],
+  urinary:['Urinary stones or crystals','The right diet depends on the stone type (struvite, oxalate or urate), so use the diet your vet recommends. Encourage drinking, and soaking kibble or adding wet food can help. Avoid spinach and organ meats unless your vet says they are fine.'],
+  dental:['Dental problems','Soaked or softer food can help if chewing hurts. Dental chews count as treats. Get the teeth checked, since pain can make a dog eat less.'],
+  pregnant:['Pregnant or nursing','Energy needs rise a lot, up to two to four times normal during nursing, and the food should be a puppy or \u201call life stages\u201d formula. The calorie target here is for non-breeding dogs, so ask your vet for a plan.']
+};
+
+const ING = [
+  {id:'chickbr',n:'Chicken breast, boiled',k:165,c:'meat'},
+  {id:'chickth',n:'Chicken thigh, boneless, boiled',k:190,c:'meat'},
+  {id:'egg',n:'Egg, boiled',k:155,c:'meat'},
+  {id:'mutton',n:'Mutton, lean, boiled',k:240,c:'meat'},
+  {id:'fish',n:'Fish, boneless, cooked',k:130,c:'meat'},
+  {id:'liver',n:'Liver, cooked',k:165,c:'organ'},
+  {id:'paneer',n:'Paneer',k:270,c:'dairy'},
+  {id:'curd',n:'Plain curd',k:60,c:'dairy'},
+  {id:'rice',n:'Rice, cooked',k:130,c:'carb'},
+  {id:'roti',n:'Roti / chapati',k:300,c:'carb'},
+  {id:'oats',n:'Oats, cooked plain',k:70,c:'carb'},
+  {id:'sweetp',n:'Sweet potato, boiled',k:90,c:'carb'},
+  {id:'potato',n:'Potato, boiled',k:87,c:'carb'},
+  {id:'dal',n:'Dal, plain, boiled',k:115,c:'carb'},
+  {id:'pumpkin',n:'Pumpkin, cooked',k:20,c:'veg'},
+  {id:'carrot',n:'Carrot, cooked',k:35,c:'veg'},
+  {id:'beans',n:'Beans or other veg, cooked',k:35,c:'veg'},
+  {id:'oil',n:'Ghee or oil',k:880,c:'fat'},
+];
+
+const DEF_DRY_KCAL = 3500;   // kcal per kg of typical kibble
+const DEF_FRESH_KCAL = 1500; // kcal per kg of typical packed fresh food
+const CUP_G = 100;           // grams in one standard cup of kibble
+const TEMPLATE_KCAL100 = 125.5; // starter homemade bowl: 50% meat, 30% carb, 20% veg by weight
+
+/* ---------- STATE ---------- */
+const S = {
+  step:0, maxStep:0,
+  name:'', breed:'', ageY:'2', ageM:'0', neutered:'yes',
+  weight:'', target:'', targetEdited:false, shape:'ideal', activity:'normal',
+  health:new Set(),
+  srcs:{dry:false,fresh:false,home:false},
+  dry:{amt:'',unit:'g',kcalkg:String(DEF_DRY_KCAL)},
+  fresh:{amt:'',kcalkg:String(DEF_FRESH_KCAL)},
+  home:{},
+  treatPct:'0.05'
+};
+
+/* ---------- HELPERS ---------- */
+const $ = (s,r=document)=>r.querySelector(s);
+const app = $('#app');
+const esc = s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = (v,d)=>{const x=parseFloat(v);return isFinite(x)&&x>0?x:d};
+const fmt = n=>Math.round(n).toLocaleString('en-US');
+const r5 = n=>Math.round(n/5)*5;
+const cups = g=>{const c=Math.round(g/CUP_G*4)/4;return c;};
+const breed = ()=>S.breed===''?null:BREEDS[+S.breed];
+const nm = ()=>S.name.trim()||'Your dog';
+const poss = ()=>S.name.trim()?esc(S.name.trim())+'\u2019s':'your dog\u2019s';
+const seg = (name,opts,val,cls='')=>`<div class="seg ${cls}" role="group">${opts.map(o=>`<button type="button" class="segbtn" data-seg="${name}" data-val="${o[0]}" aria-pressed="${String(val)===o[0]}">${o[1]}${o[2]?`<small>${o[2]}</small>`:''}</button>`).join('')}</div>`;
+
+/* ---------- CALCULATION ---------- */
+function profile(){
+  const b=breed();
+  const months=Math.max(1,(+S.ageY)*12+(+S.ageM));
+  const mat={toy:10,small:11,medium:12,large:15,giant:18}[b.s];
+  const sen={toy:10,small:10,medium:8,large:7,giant:6}[b.s]*12;
+  const isPuppy=months<mat, isSenior=!isPuppy&&months>=sen;
+  const w=num(S.weight,0), tgt=num(S.target,w);
+  const rer=x=>70*Math.pow(x,0.75);
+  const act={low:0.85,normal:1,high:1.25}[S.activity];
+  const base=S.neutered==='yes'?1.6:1.8;
+  const mer=x=>rer(x)*base*act*(isSenior?0.9:1);
+  let kcal, mode='maintain', idealW=w, noTarget=false;
+  if(isPuppy){
+    let f=months<4?3:(months<0.6*mat?2:1.6);
+    if((b.s==='large'||b.s==='giant')&&months>=4) f=Math.min(f,1.8);
+    kcal=rer(w)*f*(S.shape==='over'?0.85:S.shape==='thin'?1.1:1);
+    mode=S.shape==='over'?'lose':S.shape==='thin'?'gain':'maintain';
+  }else if(S.shape==='over'){
+    mode='lose';
+    if(tgt<w){idealW=tgt;kcal=rer(tgt);}
+    else{noTarget=true;idealW=w*0.85;kcal=mer(w)*0.8;}
+  }else if(S.shape==='thin'){
+    mode='gain'; idealW=Math.max(tgt,w); kcal=mer(idealW);
+  }else kcal=mer(w);
+  kcal=r5(kcal);
+  let meals=months<4?4:months<6?3:2;
+  if(b.s==='toy'&&months<6) meals=4;
+  if(S.health.has('diabetes')) meals=2;
+  return {b,months,isPuppy,isSenior,w,tgt,kcal,mode,idealW,noTarget,meals,mat};
+}
+
+function homeAnalysis(){
+  const r={tot:0,k:0,by:{meat:0,organ:0,dairy:0,carb:0,veg:0,fat:0},kby:{meat:0,organ:0,dairy:0,carb:0,veg:0,fat:0},lines:[]};
+  if(!S.srcs.home) return r;
+  ING.forEach(i=>{
+    if(!(i.id in S.home)) return;
+    const g=num(S.home[i.id],0); if(!g) return;
+    const k=g*i.k/100;
+    r.tot+=g; r.k+=k; r.by[i.c]+=g; r.kby[i.c]+=k; r.lines.push({i,g,k});
+  });
+  return r;
+}
+
+function calc(){
+  const p=profile();
+  const kd=num(S.dry.kcalkg,DEF_DRY_KCAL), kf=num(S.fresh.kcalkg,DEF_FRESH_KCAL);
+  const dryG=S.srcs.dry?num(S.dry.amt,0)*(S.dry.unit==='cups'?CUP_G:1):0;
+  const freshG=S.srcs.fresh?num(S.fresh.amt,0):0;
+  const an=homeAnalysis();
+  const dry=dryG*kd/1000, fresh=freshG*kf/1000, home=an.k;
+  const treats=(parseFloat(S.treatPct)||0)*p.kcal;
+  const total=dry+fresh+home+treats;
+  const food=dry+fresh+home;
+  const diff=total>0?(total-p.kcal)/p.kcal:0;
+  return {...p,kd,kf,dryG,freshG,an,intake:{dry,fresh,home,treats,total,food},diff};
+}
+
+function recommend(c){
+  const sel=['dry','fresh','home'].filter(k=>S.srcs[k]);
+  const treatRec=Math.min(c.intake.treats,0.10*c.kcal);
+  const budget=c.kcal-treatRec;
+  const rec={dry:0,fresh:0,home:0};
+  let scale=null;
+  if(c.intake.food>0){
+    scale=budget/c.intake.food;
+    sel.forEach(k=>rec[k]=c.intake[k]*scale);
+    // sources chosen but left blank get nothing unless all blank
+  }else if(sel.length){
+    sel.forEach(k=>rec[k]=budget/sel.length);
+  }
+  return {sel,treatRec,budget,rec,scale};
+}
+
+/* ---------- VIEWS ---------- */
+function renderSteps(){
+  const names=['Your dog','Health','Food','Plan'];
+  $('#steps').innerHTML=names.map((n,i)=>`<li style="flex:1"><button type="button" data-go="${i}" ${i>S.maxStep?'disabled':''} class="${i<S.step?'done':''}" ${i===S.step?'aria-current="step"':''}>${i+1}. ${n}</button></li>`).join('');
+}
+
+function step0(){
+  const groups=[['ind','Indian breeds'],[undefined,'Breeds A to Z'],['mix','Mixed breed or not listed']];
+  const opts=groups.map(([g,l])=>`<optgroup label="${l}">${BREEDS.map((b,i)=>b.g===g?`<option value="${i}" ${String(i)===String(S.breed)?'selected':''}>${esc(b.n)}</option>`:'').join('')}</optgroup>`).join('');
+  const yrs=Array.from({length:21},(_,i)=>`<option ${String(i)===S.ageY?'selected':''}>${i}</option>`).join('');
+  const mos=Array.from({length:12},(_,i)=>`<option ${String(i)===S.ageM?'selected':''}>${i}</option>`).join('');
+  return `
+  <div class="panel">
+    <h1>How much should your dog eat?</h1>
+    <p class="lede">Answer a few quick questions to get a daily calorie target and feeding amounts that fit your dog\u2019s breed, age, health and what\u2019s in the bowl.</p>
+
+    <div class="field"><label for="name">Dog\u2019s name <span class="opt">(optional)</span></label>
+      <input class="in" id="name" data-bind="name" maxlength="24" autocomplete="off" value="${esc(S.name)}"></div>
+
+    <div class="field"><label for="breed">Breed</label>
+      <select class="in" id="breed" data-bind="breed"><option value="" ${S.breed===''?'selected':''} disabled>Choose a breed</option>${opts}</select>
+      <p class="hint" id="breedHint"></p></div>
+
+    <div class="field"><span class="lab" id="agel">Age</span>
+      <div class="row2" role="group" aria-labelledby="agel">
+        <div><select class="in" id="ageY" data-bind="ageY" aria-label="Years">${yrs}</select><p class="hint">years</p></div>
+        <div><select class="in" id="ageM" data-bind="ageM" aria-label="Months">${mos}</select><p class="hint">months</p></div>
+      </div></div>
+
+    <div class="field"><span class="lab">Neutered or spayed?</span>${seg('neutered',[['yes','Yes'],['no','No']],S.neutered)}</div>
+
+    <div class="field"><label for="weight">Weight now (kg)</label>
+      <input class="in" id="weight" data-bind="weight" type="number" inputmode="decimal" step="0.1" min="0.3" max="120" value="${esc(S.weight)}" placeholder="e.g. 12.5"></div>
+
+    <div class="field"><label for="target" id="targetLabel">Target weight (kg)</label>
+      <input class="in" id="target" data-bind="target" type="number" inputmode="decimal" step="0.1" min="0.3" max="120" value="${esc(S.target)}">
+      <div class="chips" style="margin-top:10px" id="targetBtns"></div>
+      <p class="hint" id="targetHint"></p></div>
+
+    <div class="field"><span class="lab">Body shape right now</span>
+      ${seg('shape',[['thin','Too thin','Ribs and hip bones are easy to see'],['ideal','Just right','Ribs easy to feel, clear waist from above'],['over','Overweight','Hard to feel ribs, no waist']],S.shape,'stack')}</div>
+
+    <div class="field" id="actField"><span class="lab">Daily activity</span>
+      ${seg('activity',[['low','Easygoing','Short walks, mostly indoors'],['normal','Regular','30 to 60 minutes a day'],['high','Very active','1+ hour, running or working']],S.activity,'stack')}</div>
+
+    <p class="err" id="err" role="alert"></p>
+    <div class="actions"><button class="btn" type="button" data-next>Next: health</button></div>
+  </div>`;
+}
+
+function step1(){
+  return `
+  <div class="panel">
+    <h2>Any health issues?</h2>
+    <p class="lede">Select all that apply for ${poss()} health, or skip if there\u2019s nothing to report. This adds food guidance to the plan.</p>
+    <div class="chips" role="group" aria-label="Health issues">
+      ${HEALTH.map(h=>`<button type="button" class="chip" data-chip="${h.id}" aria-pressed="${S.health.has(h.id)}">${h.l}</button>`).join('')}
+    </div>
+    <p class="hint" style="margin-top:16px">The calorie target is for dogs without medical conditions. If your dog has one, your vet\u2019s advice always comes first.</p>
+    <div class="actions">
+      <button class="btn ghost" type="button" data-go="0">Back</button>
+      <button class="btn" type="button" data-next>Next: food</button>
+    </div>
+  </div>`;
+}
+
+function homeBlock(){
+  const chosen=ING.filter(i=>i.id in S.home);
+  return `
+    <p class="hint" style="margin-top:0">Tap what goes into the bowl, then enter the total grams a day. Use cooked, plain food.</p>
+    <div class="chips" style="margin:10px 0 14px">${ING.map(i=>`<button type="button" class="chip" data-ing="${i.id}" aria-pressed="${i.id in S.home}">${i.n}</button>`).join('')}</div>
+    ${chosen.map(i=>`<div class="homerow">
+      <div class="nm">${i.n}<span class="kc" id="kc-${i.id}">${homeKc(i)}</span></div>
+      <input class="in" aria-label="Grams of ${i.n} per day" type="number" inputmode="decimal" min="0" placeholder="g / day" data-home="${i.id}" value="${esc(S.home[i.id])}">
+      <button class="xbtn" type="button" data-rm="${i.id}" aria-label="Remove ${i.n}">\u00d7</button></div>`).join('')}
+    <p class="hint" id="homeTotals">${homeTotalsText()}</p>
+    <div class="warnline"><b>Never include:</b> onion, garlic, grapes, raisins, chocolate, xylitol, macadamia nuts, cooked bones, or masala, salt and sugar. Curry leftovers often contain onion and garlic.</div>`;
+}
+function homeKc(i){const g=num(S.home[i.id],0);return g?`${fmt(g*i.k/100)} kcal`:`${i.k} kcal per 100 g`;}
+function homeTotalsText(){const a=homeAnalysis();return a.tot?`Homemade total: ${fmt(a.tot)} g a day, about ${fmt(a.k)} kcal.`:'';}
+
+function step2(){
+  const sw=(k,c,t,d)=>`<button type="button" class="srcbtn" data-src="${k}" aria-pressed="${S.srcs[k]}" ><i class="sw" style="background:${c}"></i><span><b>${t}</b><span class="d">${d}</span></span></button>`;
+  return `
+  <div class="panel">
+    <h2>What do they eat?</h2>
+    <p class="lede">Pick everything ${esc(nm()==='Your dog'?'your dog':nm())} eats on a normal day. Mixing is fine.</p>
+    <div class="src">
+      ${sw('dry','var(--dry)','Dry food','Kibble from a bag')}
+      ${sw('fresh','var(--fresh)','Packed fresh food','Refrigerated or fresh-cooked packs')}
+      ${sw('home','var(--home)','Homemade meals','Cooked at home')}
+    </div>
+    <div id="srcDetails">${srcDetails()}</div>
+
+    <div class="block">
+      <h3><span class="dot" style="background:var(--treat)"></span>Treats and extras</h3>
+      <p class="hint" style="margin:0 0 10px">Biscuits, chews, table scraps, anything outside meals. How much per day?</p>
+      ${seg('treatPct',[['0','None'],['0.05','A few'],['0.15','Several'],['0.25','Lots']],S.treatPct)}
+    </div>
+
+    <p class="err" id="err" role="alert"></p>
+    <div class="actions">
+      <button class="btn ghost" type="button" data-go="1">Back</button>
+      <button class="btn" type="button" data-next>See the plan</button>
+    </div>
+    <div class="tally" id="tally" aria-live="polite"></div>
+  </div>`;
+}
+
+function srcDetails(){
+  let h='';
+  if(S.srcs.dry) h+=`<div class="block"><h3><span class="dot" style="background:var(--dry)"></span>Dry food</h3>
+    <label for="dryamt">Amount per day</label>
+    <div class="row-in"><input class="in" id="dryamt" type="number" inputmode="decimal" min="0" placeholder="Total a day" data-bind="dry.amt" value="${esc(S.dry.amt)}">
+      <select class="in" aria-label="Unit" data-bind="dry.unit"><option value="g" ${S.dry.unit==='g'?'selected':''}>grams</option><option value="cups" ${S.dry.unit==='cups'?'selected':''}>cups</option></select></div>
+    <p class="hint">Total across all meals. We count 1 cup as about ${CUP_G} g. Weighing is more accurate.</p>
+    <label for="drykc" style="margin-top:14px">Energy in the food <span class="opt">(kcal per kg)</span></label>
+    <input class="in" id="drykc" type="number" inputmode="decimal" min="0" data-bind="dry.kcalkg" value="${esc(S.dry.kcalkg)}">
+    <p class="hint">We assume ${DEF_DRY_KCAL.toLocaleString()} kcal per kg, which is typical for kibble. If the bag shows a number (often labelled ME or metabolisable energy), enter it here.</p></div>`;
+  if(S.srcs.fresh) h+=`<div class="block"><h3><span class="dot" style="background:var(--fresh)"></span>Packed fresh food</h3>
+    <label for="freshamt">Amount per day (grams)</label>
+    <input class="in" id="freshamt" type="number" inputmode="decimal" min="0" placeholder="Total grams a day" data-bind="fresh.amt" value="${esc(S.fresh.amt)}">
+    <label for="freshkc" style="margin-top:14px">Energy in the food <span class="opt">(kcal per kg)</span></label>
+    <input class="in" id="freshkc" type="number" inputmode="decimal" min="0" data-bind="fresh.kcalkg" value="${esc(S.fresh.kcalkg)}">
+    <p class="hint">We assume ${DEF_FRESH_KCAL.toLocaleString()} kcal per kg, which is typical for fresh packs. Check the pack for the exact figure.</p></div>`;
+  if(S.srcs.home) h+=`<div class="block" id="homeWrap"><h3><span class="dot" style="background:var(--home)"></span>Homemade meals</h3><div id="homeBlock">${homeBlock()}</div></div>`;
+  return h;
+}
+
+function bowlSVG(c){
+  const segs=[{k:c.intake.dry,c:'var(--dry)'},{k:c.intake.fresh,c:'var(--fresh)'},{k:c.intake.home,c:'var(--home)'},{k:c.intake.treats,c:'var(--treat)'}];
+  const cap=Math.max(c.kcal*1.35,c.intake.total*1.05);
+  const top=40,bot=135,H=bot-top;
+  let y=bot,rects='';
+  segs.forEach(s=>{if(s.k<=0)return;const h=s.k/cap*H;y-=h;rects+=`<rect x="10" y="${y.toFixed(1)}" width="220" height="${h.toFixed(1)}" fill="${s.c}"/>`;});
+  const ty=bot-c.kcal/cap*H;
+  const d='M20 40H220C220 105 185 135 120 135C55 135 20 105 20 40Z';
+  return `<svg viewBox="0 0 240 158" role="img" aria-label="Bowl showing current daily calories against the target of ${fmt(c.kcal)} kcal">
+    <defs><clipPath id="bowlclip"><path d="${d}"/></clipPath></defs>
+    <path d="${d}" fill="var(--soft)"/>
+    <g clip-path="url(#bowlclip)"><g class="fillg">${rects}</g></g>
+    <path d="${d}" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
+    <rect x="86" y="140" width="68" height="6" rx="3" fill="var(--ink)"/>
+    <line x1="8" x2="232" y1="${ty.toFixed(1)}" y2="${ty.toFixed(1)}" stroke="var(--ink)" stroke-width="2" stroke-dasharray="6 4"/>
+    <text x="120" y="${(ty-5).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)" style="paint-order:stroke;stroke:var(--surface);stroke-width:3px">daily target ${fmt(c.kcal)} kcal</text>
+  </svg>`;
+}
+
+function updateTally(){
+  const t=$('#tally'); if(!t) return;
+  const c=calc();
+  const cap=Math.max(c.kcal*1.25,c.intake.total*1.02);
+  const seg=(k,col)=>k>0?`<i style="width:${(k/cap*100).toFixed(1)}%;background:${col}"></i>`:'';
+  t.innerHTML=`${c.intake.total>0?`Feeding about <b>${fmt(c.intake.total)}</b> of <b>${fmt(c.kcal)}</b> kcal a day`:`${esc(nm())} needs about <b>${fmt(c.kcal)}</b> kcal a day`}
+   <div class="tbar">${seg(c.intake.dry,'var(--dry)')}${seg(c.intake.fresh,'var(--fresh)')}${seg(c.intake.home,'var(--home)')}${seg(c.intake.treats,'var(--treat)')}<span class="tmark" style="left:${(c.kcal/cap*100).toFixed(1)}%"></span></div>`;
+}
+
+/* ----- advice ----- */
+function buildAdvice(c,rc){
+  const A=[]; const add=(t,h,p)=>A.push({t,h,p});
+  const n=esc(nm()==='Your dog'?'Your dog':nm());
+  const T=c.intake.total, d=c.diff, food=c.intake.food;
+  const sel=rc.sel;
+
+  if(T>0){
+    if(Math.abs(d)<=0.10) add('ok','Calories are on target',`You\u2019re feeding about ${fmt(T)} kcal a day, close to the ${fmt(c.kcal)} kcal ${n==='Your dog'?'your dog':n} needs.`);
+    else if(d>0) add(d>0.25?'warn':'tip','Feeding more than needed',`You\u2019re feeding about ${Math.round(d*100)}% more than the target (${fmt(T)} vs ${fmt(c.kcal)} kcal). Move to the amounts in the table over about a week.${c.mode==='lose'?' This extra is likely behind the extra weight.':''}`);
+    else if(c.mode==='lose') add('tip','Already below the target',`Your current amount is lower than the weight-loss target, so don\u2019t cut more. If the weight isn\u2019t falling, weigh the food and check for hidden extras like scraps and chews.`);
+    else add(c.mode==='gain'||d<-0.25?'warn':'tip','Feeding less than needed',`You\u2019re feeding about ${Math.round(-d*100)}% below the target (${fmt(T)} vs ${fmt(c.kcal)} kcal). Raise the amounts in the table gradually over a week.`);
+  }else{
+    add('info','Add your amounts to compare','You didn\u2019t enter any quantities, so the plan splits the target evenly across the foods you chose. Go back and add amounts to see how your current feeding compares.');
+  }
+
+  if(c.intake.treats>0.10*c.kcal+1){
+    add('tip','Treats are above 10%',`Treats and extras are about ${Math.round(c.intake.treats/c.kcal*100)}% of the day\u2019s calories (roughly ${fmt(c.intake.treats)} kcal). Keep them to 10% or less, about ${fmt(0.1*c.kcal)} kcal, and use part of the regular meal as training treats.`);
+  }
+
+  const complete=(c.intake.dry+c.intake.fresh);
+  const homeShare=T>0?c.intake.home/(c.intake.food||1):(S.srcs.home&&sel.length===1?1:0);
+  const hasComplete=S.srcs.dry||S.srcs.fresh;
+
+  if(S.srcs.dry) add('info','Dry food check','Look for \u201ccomplete and balanced\u201d on the bag, for the right life stage (puppy, adult, or large-breed puppy). Keep it airtight, cool and dry, and switch brands slowly over 7 to 10 days.');
+  if(S.srcs.fresh) add('info','Fresh food check','Make sure the pack says \u201ccomplete and balanced.\u201d Some are toppers and not meant to be a whole diet. Keep refrigerated, use within the pack\u2019s days once opened, and don\u2019t leave it out for more than 30 minutes in warm weather.');
+  if(S.srcs.home&&hasComplete&&c.intake.food>0) add('tip','Mixing foods',`When you combine foods, count them together. If you add homemade food or fresh packs, cut the dry food so the total stays near ${fmt(c.kcal)} kcal. The table shows the adjusted amounts.`);
+
+  if(S.srcs.home){
+    const an=c.an;
+    const needsSupp = !hasComplete || homeShare>0.25;
+    if(needsSupp){
+      add(c.isPuppy?'warn':'warn','Homemade food needs a vitamin and mineral supplement',
+        `${c.isPuppy?'Growing puppies are at high risk from unbalanced homemade food, especially calcium and phosphorus. Use a complete puppy food, or a recipe from a vet nutritionist. ':''}Home-cooked meals are usually short on calcium, vitamins and trace minerals. Ask your vet for a supplement made for home-cooked diets, or use a recipe from a vet nutritionist. Don\u2019t add calcium on your own, because too much is also harmful.`);
+    }else if(S.srcs.home){
+      add('ok','Homemade as a topper looks fine','Because most calories come from complete food, a small homemade portion is fine. Keep it plain and cooked.');
+    }
+    if(an.tot>0){
+      const p=x=>an.by[x]/an.tot;
+      const animal=p('meat')+p('organ');
+      if(animal===0&&p('dairy')===0) add('warn','No meat, egg or fish in the mix','Dogs need good-quality animal protein. If you choose a vegetarian plan, it needs expert planning (a vet nutritionist) to avoid protein, taurine and B12 gaps.');
+      else if(animal<0.30&&p('dairy')<0.2) add('tip','Protein looks low',`Meat, egg and fish are only about ${Math.round(animal*100)}% of the homemade bowl by weight. Aim for roughly 40 to 50%.`);
+      if(p('carb')>0.50) add('tip','Too much rice, roti or other carbs',`Carbs make up about ${Math.round(p('carb')*100)}% of the homemade bowl. Keep them under half and make up the difference with protein and vegetables.`);
+      if(p('veg')<0.10) add('tip','Add some vegetables','Aim for roughly 10 to 25% of the bowl as cooked vegetables like pumpkin, carrot or beans, for fibre.');
+      if(an.k>0&&an.kby.fat/an.k>0.15) add('tip','Too much ghee or oil',`Added fat gives about ${Math.round(an.kby.fat/an.k*100)}% of the homemade calories. Cut back, especially if your dog has pancreatitis or is overweight.`);
+      if(p('organ')>0.05) add('tip','Liver is above 5% of the bowl','Too much liver can cause vitamin A excess. Keep organ meat to about 5% or less of the bowl, or use it once or twice a week.');
+      if(p('dairy')>0.15) add('tip','Lots of paneer or curd',`Dairy is about ${Math.round(p('dairy')*100)}% of the bowl. Many dogs are lactose-sensitive, so watch for loose stools and keep dairy modest.`);
+    }else{
+      add('info','Add ingredients for a balance check','Enter the ingredients and grams for your homemade meals, and we\u2019ll check protein, carbs, vegetables and fat.');
+    }
+  }
+
+  if(c.isPuppy){
+    if(c.months<2) add('warn','Very young puppy','Puppies under 8 weeks should still be with their mother or on vet-guided weaning. Please check with a vet before using any of these amounts.');
+    if(c.b.s==='large'||c.b.s==='giant') add('tip','Large-breed puppy rules','Use a large-breed puppy formula (controlled calcium) and keep your puppy slim. Fast growth stresses developing joints. Don\u2019t add calcium supplements.');
+    add('info','Growing puppy',`Feed ${c.meals} meals a day at regular times. Weigh every 2 weeks, and re-run this calculator as your puppy grows because needs change quickly.`);
+  }else{
+    if(S.neutered==='yes') add('info','Neutered dogs need fewer calories','Neutering lowers energy needs by roughly a quarter and often increases appetite. We\u2019ve used a lower factor, so weigh your dog monthly.');
+    else add('info','Not neutered','The plan uses a slightly higher energy factor for intact dogs. Talk to your vet about the right time for neutering if it\u2019s on your mind, and then re-run this calculator.');
+    if(c.isSenior) add('info','Senior dog','Calories are trimmed about 10%, but seniors still need good protein to hold on to muscle. Watch for weight loss, which can signal an illness.');
+  }
+  return A;
+}
+
+function renderPlan(){
+  const c=calc(), rc=recommend(c);
+  const b=c.b, n=nm();
+  const stage=c.isPuppy?`puppy, ${c.months<24?c.months+' months':Math.floor(c.months/12)+' years'}`:c.isSenior?'senior':'adult';
+  const stageDesc=`${esc(b.n)}, ${stage}, ${num(S.weight,0)} kg${c.isPuppy?'':S.neutered==='yes'?', neutered':', not neutered'}`;
+  const perMeal=r5(c.kcal/c.meals);
+  const dryAlone=c.kcal/(c.kd/1000);
+
+  /* rows */
+  const rows=[];
+  const mealsDiv=x=>x/c.meals;
+  if(S.srcs.dry){
+    const rg=rc.rec.dry/(c.kd/1000);
+    rows.push({c:'var(--dry)',t:'Dry food',nowG:c.dryG,nowTxt:c.dryG?`${fmt(c.dryG)} g<small>${cups(c.dryG)} cups</small>`:'<small>not entered</small>',recTxt:`<b>${fmt(rg)} g</b><small>about ${cups(rg)} cups a day</small>`,mealTxt:`${fmt(mealsDiv(rg))} g`});
+  }
+  if(S.srcs.fresh){
+    const rg=rc.rec.fresh/(c.kf/1000);
+    rows.push({c:'var(--fresh)',t:'Packed fresh food',nowTxt:c.freshG?`${fmt(c.freshG)} g`:'<small>not entered</small>',recTxt:`<b>${fmt(rg)} g</b><small>a day</small>`,mealTxt:`${fmt(mealsDiv(rg))} g`});
+  }
+  if(S.srcs.home){
+    let rg,detail='';
+    if(c.an.tot>0&&rc.scale!==null){
+      rg=c.an.tot*rc.scale;
+      detail=`<details><summary>Amount of each ingredient</summary><ul>${c.an.lines.map(l=>`<li>${l.i.n}: ${fmt(l.g)} g \u2192 <b>${fmt(l.g*rc.scale)} g</b></li>`).join('')}</ul></details>`;
+    }else{
+      rg=rc.rec.home/(TEMPLATE_KCAL100/100);
+      detail=`<details><summary>Starter bowl by weight</summary><ul><li>Cooked meat, egg or fish: ${fmt(rg*0.5)} g</li><li>Rice or sweet potato: ${fmt(rg*0.3)} g</li><li>Cooked vegetables: ${fmt(rg*0.2)} g</li></ul></details>`;
+    }
+    rows.push({c:'var(--home)',t:'Homemade meals',nowTxt:c.an.tot?`${fmt(c.an.tot)} g<small>${fmt(c.an.k)} kcal</small>`:'<small>not entered</small>',recTxt:`<b>${fmt(rg)} g</b><small>about ${fmt(rc.rec.home)} kcal a day</small>${detail}`,mealTxt:`${fmt(mealsDiv(rg))} g`});
+  }
+  if(c.intake.treats>0||true){
+    rows.push({c:'var(--treat)',t:'Treats and extras',nowTxt:c.intake.treats?`${fmt(c.intake.treats)} kcal`:'none',recTxt:`<b>up to ${fmt(0.1*c.kcal)} kcal</b><small>10% of the day</small>`,mealTxt:'training use'});
+  }
+
+  /* legend */
+  const leg=[];
+  if(c.intake.dry>0) leg.push(['var(--dry)',`Dry ${fmt(c.intake.dry)} kcal`]);
+  if(c.intake.fresh>0) leg.push(['var(--fresh)',`Fresh ${fmt(c.intake.fresh)} kcal`]);
+  if(c.intake.home>0) leg.push(['var(--home)',`Homemade ${fmt(c.intake.home)} kcal`]);
+  if(c.intake.treats>0) leg.push(['var(--treat)',`Treats ${fmt(c.intake.treats)} kcal`]);
+
+  /* status line */
+  let status='';
+  if(c.intake.total>0){
+    const pct=Math.round(c.diff*100);
+    status=Math.abs(pct)<=10?`Right now ${esc(n==='Your dog'?'your dog':n)} gets about ${fmt(c.intake.total)} kcal a day, which is on target.`:`Right now ${esc(n==='Your dog'?'your dog':n)} gets about ${fmt(c.intake.total)} kcal a day, ${Math.abs(pct)}% ${pct>0?'above':'below'} the target.`;
+  }
+
+  /* weight card */
+  let weightHtml='';
+  const w=c.w, bmid=(b.min+b.max)/2;
+  if(c.isPuppy){
+    weightHtml=`<p>Adults of this breed usually weigh <b>${b.min} to ${b.max} kg</b>. ${esc(n==='Your dog'?'Your puppy':n)} is ${w} kg now. Weigh every 2 weeks: steady gain is expected, but a sudden jump or stall is worth a vet chat.</p>`;
+  }else{
+    weightHtml=`<p>Typical healthy range for this breed: <b>${b.min} to ${b.max} kg</b>. ${esc(n==='Your dog'?'Your dog':n)} weighs ${w} kg. Body shape matters more than the number, so use the rib test.</p>`;
+    if(c.mode==='lose'){
+      if(c.noTarget) weightHtml+=`<p>Your target weight isn\u2019t below the current weight, so we\u2019ve trimmed calories by about 20%. Go back and set a lower target for a firmer plan.</p>`;
+      else{
+        const lo=Math.ceil((w-c.idealW)/(w*0.02)), hi=Math.ceil((w-c.idealW)/(w*0.01));
+        weightHtml+=`<p>Plan: reach <b>${c.idealW} kg</b>. A safe pace is 1 to 2% of body weight a week, so expect about <b>${lo} to ${hi} weeks</b>. Weigh every 2 weeks, and ask your vet to check if loss is faster than that.</p>`;
+      }
+    }
+    if(c.mode==='gain') weightHtml+=`<p>The target is set for ${c.idealW} kg. Raise portions gradually, and have your vet check for worms, tick fever and other causes of thinness before assuming it\u2019s just food.</p>`;
+  }
+
+  /* advice + notes */
+  const adv=buildAdvice(c,rc);
+  const order={warn:0,tip:1,ok:2,info:3};
+  adv.sort((a,b)=>order[a.t]-order[b.t]);
+  const advHtml=adv.map(a=>`<div class="note ${a.t}"><b>${a.h}</b><p>${a.p}</p></div>`).join('');
+
+  const bt=[...new Set(b.t)].map(t=>BREED_NOTES[t]).filter(Boolean);
+  if(c.isPuppy&&!(b.s==='large'||b.s==='giant')){}
+  const breedHtml=bt.map(x=>`<div class="note info"><b>${x[0]}</b><p>${x[1]}</p></div>`).join('');
+
+  const hs=[...S.health];
+  const serious=HEALTH.filter(h=>h.serious&&S.health.has(h.id));
+  const healthHtml=hs.length?`${serious.length?`<div class="note warn"><b>Check with your vet first</b><p>${serious.map(s=>s.l.toLowerCase()).join(', ')}: the calorie target above is for healthy dogs. Please confirm any diet change with your vet.</p></div>`:''}${hs.map(h=>`<div class="note info"><b>${HEALTH_NOTES[h][0]}</b><p>${HEALTH_NOTES[h][1]}</p></div>`).join('')}`:'';
+
+  return `
+  <div class="hero">
+    <h2>${poss().replace(/^your dog\u2019s$/,'Your dog\u2019s')} daily plan</h2>
+    <p>${stageDesc}</p>
+    <div class="big">${fmt(c.kcal)}<small>kcal a day</small></div>
+    <p><b>${c.meals} meals</b> of about ${fmt(perMeal)} kcal each. ${c.mode==='lose'?'This is a weight-loss target.':c.mode==='gain'?'This is set to help healthy weight gain.':''}</p>
+  </div>
+
+  <div class="bowlcard">
+    ${bowlSVG(c)}
+    <div class="legend">${leg.length?leg.map(l=>`<span><i style="background:${l[0]}"></i>${l[1]}</span>`).join(''):'<span>Add amounts on the food step to see the bowl fill</span>'}</div>
+    ${status?`<p style="margin:0;text-align:center">${status}</p>`:''}
+  </div>
+
+  <section class="sec"><h3>How much to feed</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th>Food</th><th>Now, per day</th><th>Recommended, per day</th><th>Per meal</th></tr></thead>
+      <tbody>${rows.map(r=>`<tr><td><b style="border-left:6px solid ${r.c};padding-left:8px">${r.t}</b></td><td>${r.nowTxt}</td><td>${r.recTxt}</td><td>${r.mealTxt}</td></tr>`).join('')}</tbody>
+    </table></div>
+    <p class="hint">If you fed only dry food (${fmt(c.kd)} kcal per kg), that would be about <b>${fmt(dryAlone)} g</b> a day, around ${cups(dryAlone)} cups. Weigh food for the best accuracy, since cup sizes and kibble density vary.</p>
+  </section>
+
+  <section class="sec"><h3>What to change</h3>${advHtml}</section>
+
+  <section class="sec"><h3>Weight and body shape</h3><div class="note info">${weightHtml}</div>
+    <p class="hint">Rib test: you should feel the ribs under a thin layer of padding, like the back of your hand, and see a waist from above.</p></section>
+
+  ${breedHtml?`<section class="sec"><h3>For ${esc(b.n.split(' (')[0])}</h3>${breedHtml}</section>`:''}
+  ${healthHtml?`<section class="sec"><h3>Health notes</h3>${healthHtml}</section>`:''}
+
+  <div class="actions">
+    <button class="btn" type="button" data-go="0">Edit answers</button>
+    <button class="btn ghost" type="button" data-print>Print plan</button>
+    <button class="btn ghost" type="button" data-reset>Start over</button>
+  </div>
+  <p class="fine">Bowlwise uses standard veterinary energy formulas: resting energy = 70 \u00d7 (body weight in kg)<sup>0.75</sup>, multiplied by a life-stage factor for puppies, neutered or intact adults, activity and age. Packed foods use typical values (kibble ${DEF_DRY_KCAL.toLocaleString()}, fresh ${DEF_FRESH_KCAL.toLocaleString()} kcal per kg) unless you enter your own, and 1 cup is counted as ${CUP_G} g. These are starting points: adjust every 2 to 4 weeks based on body shape and weight. This is general guidance, not veterinary advice.</p>`;
+}
+
+/* ---------- RENDER + EVENTS ---------- */
+function render(){
+  renderSteps();
+  if(S.step===0){app.innerHTML=step0();refreshStep0();}
+  else if(S.step===1) app.innerHTML=step1();
+  else if(S.step===2){app.innerHTML=step2();updateTally();}
+  else app.innerHTML=renderPlan();
+  window.scrollTo({top:0,behavior:'auto'});
+}
+
+function refreshStep0(){
+  const b=breed(); if(!$('#breedHint')) return;
+  const months=(+S.ageY)*12+(+S.ageM);
+  let puppy=false;
+  if(b){
+    const mat={toy:10,small:11,medium:12,large:15,giant:18}[b.s];
+    puppy=months<mat;
+    const mid=Math.round((b.min+b.max)/2*2)/2;
+    $('#breedHint').textContent=`Typical adult weight: ${b.min} to ${b.max} kg.`;
+    if(!S.targetEdited){S.target=String(mid);$('#target').value=S.target;}
+    $('#targetBtns').innerHTML=[['Low',b.min],['Middle',mid],['High',b.max]].map(x=>`<button type="button" class="minibtn" data-tg="${x[1]}">${x[0]} ${x[1]} kg</button>`).join('');
+    $('#targetHint').textContent=puppy?'The expected adult weight. We\u2019ve filled in the middle of the breed range, and you can change it.':'A healthy goal weight. We\u2019ve filled in the middle of the breed range. If your dog is just right at a different weight, that\u2019s fine, so say \u201cJust right\u201d below.';
+  }
+  $('#targetLabel').textContent=puppy?'Expected adult weight (kg)':'Target weight (kg)';
+  $('#actField').hidden=puppy;
+}
+
+function setPath(path,val){
+  const p=path.split('.');
+  if(p.length===1) S[p[0]]=val; else S[p[0]][p[1]]=val;
+}
+
+function validate(i){
+  const e=$('#err');
+  const bad=m=>{if(e)e.textContent=m;return false;};
+  if(i===0){
+    if(S.breed==='') return bad('Choose a breed to continue.');
+    const w=parseFloat(S.weight);
+    if(!(w>=0.3&&w<=120)) return bad('Enter your dog\u2019s weight in kg, between 0.3 and 120.');
+    if(S.target!==''&&!(parseFloat(S.target)>=0.3)) return bad('Enter a valid target weight, or clear it.');
+  }
+  if(i===2&&!(S.srcs.dry||S.srcs.fresh||S.srcs.home)) return bad('Pick at least one food your dog eats.');
+  return true;
+}
+
+function go(n){
+  if(n>S.step&&!validate(S.step)) return;
+  S.step=n; S.maxStep=Math.max(S.maxStep,n); render();
+}
+
+app.addEventListener('click',e=>{
+  const t=e.target.closest('button'); if(!t) return;
+  if(t.dataset.seg){
+    const name=t.dataset.seg; S[name]=t.dataset.val;
+    t.parentElement.querySelectorAll('.segbtn').forEach(b=>b.setAttribute('aria-pressed',String(b===t)));
+    if(name==='treatPct') updateTally();
+  }else if(t.dataset.chip){
+    const id=t.dataset.chip;
+    S.health.has(id)?S.health.delete(id):S.health.add(id);
+    t.setAttribute('aria-pressed',String(S.health.has(id)));
+  }else if(t.dataset.src){
+    const k=t.dataset.src; S.srcs[k]=!S.srcs[k];
+    t.setAttribute('aria-pressed',String(S.srcs[k]));
+    $('#srcDetails').innerHTML=srcDetails(); updateTally();
+  }else if(t.dataset.ing){
+    const id=t.dataset.ing;
+    if(id in S.home) delete S.home[id]; else S.home[id]='';
+    $('#homeBlock').innerHTML=homeBlock(); updateTally();
+  }else if(t.dataset.rm){
+    delete S.home[t.dataset.rm]; $('#homeBlock').innerHTML=homeBlock(); updateTally();
+  }else if(t.dataset.tg){
+    S.target=t.dataset.tg; S.targetEdited=true; $('#target').value=S.target;
+  }else if(t.hasAttribute('data-next')) go(S.step+1);
+  else if(t.dataset.go!==undefined) go(+t.dataset.go);
+  else if(t.hasAttribute('data-print')) window.print();
+  else if(t.hasAttribute('data-reset')){
+    Object.assign(S,{step:0,maxStep:0,name:'',breed:'',ageY:'2',ageM:'0',neutered:'yes',weight:'',target:'',targetEdited:false,shape:'ideal',activity:'normal',health:new Set(),srcs:{dry:false,fresh:false,home:false},dry:{amt:'',unit:'g',kcalkg:String(DEF_DRY_KCAL)},fresh:{amt:'',kcalkg:String(DEF_FRESH_KCAL)},home:{},treatPct:'0.05'});
+    render();
+  }
+});
+
+$('#steps').addEventListener('click',e=>{
+  const t=e.target.closest('button[data-go]'); if(t&&!t.disabled) go(+t.dataset.go);
+});
+
+app.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset.bind){
+    setPath(t.dataset.bind,t.value);
+    if(t.dataset.bind==='target') S.targetEdited=true;
+    if(S.step===2) updateTally();
+  }else if(t.dataset.home){
+    S.home[t.dataset.home]=t.value;
+    const i=ING.find(x=>x.id===t.dataset.home);
+    const kc=$('#kc-'+i.id); if(kc) kc.textContent=homeKc(i);
+    const ht=$('#homeTotals'); if(ht) ht.textContent=homeTotalsText();
+    updateTally();
+  }
+});
+app.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.bind){
+    setPath(t.dataset.bind,t.value);
+    if(S.step===0&&['breed','ageY','ageM'].includes(t.dataset.bind)) refreshStep0();
+    if(S.step===2) updateTally();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
